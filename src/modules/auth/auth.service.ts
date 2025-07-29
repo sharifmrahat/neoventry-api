@@ -29,7 +29,7 @@ export class AuthService {
 
     const saltRound = this.configService.get<number>('JWT_SALT_ROUND');
 
-    const hashedPassword = await bcrypt.hash(input.password, saltRound);
+    const hashedPassword = await bcrypt.hash(input.password, +saltRound);
 
     const newUser = await this.prisma.user.create({
       data: { ...input, password: hashedPassword },

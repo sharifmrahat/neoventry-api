@@ -1,3 +1,4 @@
+import { GlobalExceptionFilter } from './common/global-exceptions';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
@@ -23,6 +24,9 @@ async function bootstrap() {
         transform: true, // automatically transform payloads to DTO classes
       }),
     );
+
+    app.useGlobalFilters(new GlobalExceptionFilter());
+
     await app.listen(port);
 
     console.log(

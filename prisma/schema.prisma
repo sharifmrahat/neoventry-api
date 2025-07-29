@@ -9,23 +9,339 @@ datasource db {
 }
 
 model User {
+  id              String            @id @default(uuid())
+  name            String
+  username        String            @unique
+  email           String            @unique
+  phone           String?
+  role            Role              @default(User)
+  imageUrl        String?
+  password        String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  isActive        Boolean           @default(true)
+  isDeleted       Boolean           @default(false)
+  address         String?
+  isVerified      Boolean           @default(false)
+  verificationOtp VerificationOtp[]
+  companies       Company[]
+  payments        Payment[]
+  timelineLog     TimelineLog[]
+  permissions     Permission[]
+  userGroups      UserGroup[]
+}
+
+model Company {
+  id                String                   @id @default(uuid())
+  name              String
+  email             String                   @unique
+  phone             String                   @unique
+  logo              String?
+  type              String?
+  documents         CompanyDocument[]
+  address           String?
+  latitude          String?
+  longitude         String?
+  applicationStatus CompanyApplicationStatus @default(Pending)
+  ownerId           String
+  owner             User                     @relation(fields: [ownerId], references: [id])
+  product           Product[]
+  order             Order[]
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  isActive          Boolean                  @default(true)
+  isDeleted         Boolean                  @default(false)
+}
+
+model CompanyDocument {
   id        String   @id @default(uuid())
-  name      String
-  username  String   @unique
-  email     String   @unique
-  role      Role     @default(USER)
-  imageUrl  String?
-  password  String
+  type      String
+  file      String
+  company   Company  @relation(fields: [companyId], references: [id])
+  companyId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isActive  Boolean  @default(true)
   isDeleted Boolean  @default(false)
-  address   String?
-  companyId String   @default(uuid())
+}
+
+model Product {
+  id              String      @id @default(uuid())
+  name            String
+  sku             String      @unique
+  description     String?
+  price           Float
+  currency        String
+  barcode         String?
+  purchasePrice   Float?
+  retailPrice     Float?
+  wholesalePrice  Float?
+  discountedPrice Float?
+  imageUrls       String[]
+  companyId       String
+  company         Company     @relation(fields: [companyId], references: [id])
+  brandId         String
+  brand           Brand       @relation(fields: [brandId], references: [id])
+  stock           Stock?
+  orderItems      OrderItem[]
+  isNew           Boolean     @default(false)
+  isFeatured      Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  isActive        Boolean     @default(true)
+  isDeleted       Boolean     @default(false)
+}
+
+model Brand {
+  id          String    @id @default(uuid())
+  name        String
+  logo        String?
+  description String?
+  products    Product[]
+  isFeatured  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  isActive    Boolean   @default(true)
+  isDeleted   Boolean   @default(false)
+}
+
+model Stock {
+  id   String @id @default(uuid())
+  skId String @unique
+
+  productId String  @unique
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity    Int
+  minQuantity Int? // minimum threshold for reordering
+  unit        String? // e.g. pcs, kg, liter
+
+  location      String? // store/warehouse/branch name or ID
+  batchNumber   String? // if applicable
+  expiryDate    DateTime? // for perishable goods
+  purchasePrice Float? // for valuation, optional
+
+  action   StockAction
+  timeline TimelineLog[]
+
+  isActive  Boolean  @default(true)
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Customer {
+  id              String   @id @default(uuid())
+  name            String
+  email           String?
+  phone           String
+  whatsApp        String?
+  imageUrl        String?
+  shippingAddress String?
+  billingAddress  String?
+  socialMediaUrl  String?
+  orders          Order[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  isActive        Boolean  @default(true)
+  isDeleted       Boolean  @default(false)
+}
+
+model Order {
+  id    String @id @default(uuid())
+  poId  String @unique
+  total Float
+
+  deliveryCharge Float
+
+  status OrderStatus @default(Pending)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+
+  orderItems OrderItem[]
+
+  payments Payment[]
+
+  timeline TimelineLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  isDeleted Boolean  @default(false)
+}
+
+model OrderItem {
+  id       String @id @default(uuid())
+  quantity Int
+  price    Float
+
+  barcode String?
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  isDeleted Boolean  @default(false)
+}
+
+model TimelineLog {
+  id             String @id @default(uuid())
+  currentAction  String
+  previousAction String
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  order     Order?   @relation(fields: [orderId], references: [id])
+  orderId   String?
+  stocks    Stock?   @relation(fields: [stockId], references: [id])
+  stockId   String?
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+  paymentId String?
+
+  remarks String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  isDeleted Boolean  @default(false)
+}
+
+model VerificationOtp {
+  id        String   @id @default(uuid())
+  value     String
+  duration  DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  isDeleted Boolean  @default(false)
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  amount        Int
+  transactionId String
+  paymentMethod String
+  remarks       String?
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  order         Order?        @relation(fields: [orderId], references: [id])
+  orderId       String?
+  timelineLog   TimelineLog[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  isActive      Boolean       @default(true)
+  isDeleted     Boolean       @default(false)
+}
+
+model UserGroup {
+  id          String       @id @default(uuid())
+  name        String
+  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isActive    Boolean      @default(true)
+  isDeleted   Boolean      @default(false)
+  permissions Permission[]
+}
+
+model Permission {
+  id          String     @id @default(uuid())
+  name        String
+  modules     Module[]
+  page        Page[]
+  users       User[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  isActive    Boolean    @default(true)
+  isDeleted   Boolean    @default(false)
+  userGroup   UserGroup? @relation(fields: [userGroupId], references: [id])
+  userGroupId String?
+}
+
+model Module {
+  id          String       @id @default(uuid())
+  name        String
+  url         String
+  icon        String?
+  pages       Page[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isActive    Boolean      @default(true)
+  isDeleted   Boolean      @default(false)
+  permissions Permission[]
+}
+
+model Page {
+  id          String       @id @default(uuid())
+  name        String
+  url         String
+  icon        String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isActive    Boolean      @default(true)
+  isDeleted   Boolean      @default(false)
+  permissions Permission[]
+  module      Module?      @relation(fields: [moduleId], references: [id])
+  moduleId    String?
+}
+
+model Setting {
+  id           String   @id @default(uuid())
+  internalName String   @unique
+  displayName  String
+  type         String
+  data         Json?
+  string       String?
+  int          Int?
+  float        Float?
+  boolean      Boolean?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  isActive     Boolean  @default(true)
+  isDeleted    Boolean  @default(false)
 }
 
 enum Role {
-  USER
-  MODERATOR
-  ADMIN
+  User
+  Moderator
+  Admin
+  SuperAdmin
+}
+
+enum CompanyApplicationStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+enum StockAction {
+  Increased
+  Decreased
+}
+
+enum OrderStatus {
+  Pending
+  Cancelled
+  PendingPayment
+  Processing
+  Shipped
+  OutForDelivery
+  Delivered
+}
+
+enum PaymentStatus {
+  Unpaid
+  Paid
+  PartialPaid
 }
