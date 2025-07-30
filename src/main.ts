@@ -1,8 +1,9 @@
 import { GlobalExceptionFilter } from './common/global-exceptions';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
+import { RolesGuard } from './common/guards/role.guard';
 
 async function bootstrap() {
   try {
@@ -17,6 +18,7 @@ async function bootstrap() {
 
     app.enableCors();
     app.setGlobalPrefix(apiPrefix);
+    app.useGlobalGuards(new RolesGuard(app.get(Reflector)));
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true, // strips unknown properties
@@ -24,7 +26,6 @@ async function bootstrap() {
         transform: true, // automatically transform payloads to DTO classes
       }),
     );
-
     app.useGlobalFilters(new GlobalExceptionFilter());
 
     await app.listen(port);

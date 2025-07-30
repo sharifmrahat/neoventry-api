@@ -1,15 +1,14 @@
 import { HttpStatus } from '@nestjs/common';
+import { ApiResponse } from 'src/interfaces/api-response';
 
-type IData<T> = {
+const responseData = <T>(data: {
   result?: T;
   message?: string;
   status?: boolean;
   statusCode?: number;
   accessToken?: string;
   meta?: Record<string, unknown>;
-};
-
-const responseData = <T>(data: IData<T>) => {
+}): ApiResponse<T> => {
   const status = data.status ?? true;
   const statusCode = data.statusCode ?? HttpStatus.OK;
 

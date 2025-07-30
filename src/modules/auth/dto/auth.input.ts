@@ -1,4 +1,3 @@
-//Create login input DTO
 import { IsEmail, IsString, MinLength } from 'class-validator';
 
 export class LoginInput {
