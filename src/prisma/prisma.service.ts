@@ -1,21 +1,22 @@
 import { PrismaClient } from '@prisma/client';
 import { INestApplication, Injectable, OnModuleInit } from '@nestjs/common';
-
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
+  private static instance: PrismaService;
+  private connected = false;
+
   constructor() {
-    super({
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
-      },
-    });
+    if (PrismaService.instance) return PrismaService.instance;
+    super();
+    PrismaService.instance = this;
   }
 
   async onModuleInit() {
-    await this.$connect();
-    console.log('✅ Prisma connected');
+    if (!this.connected) {
+      await this.$connect();
+      this.connected = true;
+      console.log('📦 Prisma client is connected!');
+    }
   }
 
   async enableShutdownHooks(app: INestApplication) {
