@@ -1,9 +1,10 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { LoginInput, SignupInput } from './dto/auth.input';
+import { LoginInput, SignupInput, UpdateRoleInput } from './dto/auth.input';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -61,7 +62,7 @@ export class AuthService extends BaseService {
     const user = await this.prisma.user.findUnique({
       where: { email: input.email },
     });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) throw new UnauthorizedException('User not found!');
 
     const isMatch = await bcrypt.compare(input.password, user.password);
     if (!isMatch) throw new UnauthorizedException('Password does not matched!');
@@ -79,6 +80,33 @@ export class AuthService extends BaseService {
       accessToken: token,
       result: user,
       message: 'Successfully LoggedIn',
+    });
+  }
+
+  async updateRole(
+    input: UpdateRoleInput,
+  ): Promise<ApiResponse<Omit<User, 'password'>>> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: input.userId },
+    });
+    if (!user) throw new NotFoundException('User not found!');
+
+    if (user.role === input.role) {
+      throw new ConflictException('User already exist with same role');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: input.userId },
+      data: {
+        role: input.role,
+      },
+    });
+
+    delete updatedUser.password;
+
+    return this.response({
+      result: updatedUser,
+      message: 'Role successfully updated',
     });
   }
 }

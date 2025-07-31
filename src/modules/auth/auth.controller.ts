@@ -1,7 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Patch, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginInput, SignupInput } from './dto/auth.input';
+import { LoginInput, SignupInput, UpdateRoleInput } from './dto/auth.input';
 import { Public } from 'src/common/decorators/public.decorator';
+import { SuperAdminOnly } from 'src/common/decorators/role.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -24,5 +25,11 @@ export class AuthController {
   @Post('login')
   login(@Body() input: LoginInput) {
     return this.authService.login(input);
+  }
+
+  @SuperAdminOnly()
+  @Patch('/role')
+  updateRole(@Body() input: UpdateRoleInput) {
+    return this.authService.updateRole(input);
   }
 }

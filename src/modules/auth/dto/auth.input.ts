@@ -1,4 +1,5 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsEnum, IsString, MinLength } from 'class-validator';
+import { Role } from 'src/interfaces/enums/role';
 
 export class LoginInput {
   @IsEmail({}, { message: 'Invalid email format' })
@@ -24,4 +25,12 @@ export class SignupInput {
   @IsString()
   @MinLength(4, { message: 'Username must be at least 4 characters long' })
   username: string;
+}
+
+export class UpdateRoleInput {
+  @IsString()
+  userId: string;
+
+  @IsEnum(Role)
+  role: Role;
 }

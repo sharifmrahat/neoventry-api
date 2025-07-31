@@ -14,7 +14,8 @@ export const AllUsers = () =>
 export const UserOnly = () => SetMetadata(ROLES_KEY, [Role.User]);
 export const ModeratorOnly = () => SetMetadata(ROLES_KEY, [Role.Moderator]);
 export const AdminOnly = () => SetMetadata(ROLES_KEY, [Role.Admin]);
-export const AdminAndModerator = () =>
+export const AdminOrModerator = () =>
   SetMetadata(ROLES_KEY, [Role.Admin, Role.Moderator]);
-export const AdminAndSuperAdmin = () =>
+export const AdminOrSuperAdmin = () =>
   SetMetadata(ROLES_KEY, [Role.Admin, Role.SuperAdmin]);
+export const SuperAdminOnly = () => SetMetadata(ROLES_KEY, [Role.SuperAdmin]);
