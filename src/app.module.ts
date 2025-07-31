@@ -6,6 +6,9 @@ import { ConfigModule } from '@nestjs/config';
 import { appConfig, authConfig, databaseConfig, redisConfig } from './config';
 import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { UserModule } from './modules/user/user.module';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { JwtStrategy } from './modules/auth/module/jwt.strategy';
 
 @Module({
   imports: [
@@ -16,8 +19,10 @@ import { PrismaModule } from './prisma/prisma.module';
     // MongooseModule.forRoot(process.env.MONGODB_URI),
     AuthModule,
     PrismaModule,
+    UserModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, JwtAuthGuard, JwtStrategy],
+  exports: [JwtAuthGuard],
 })
 export class AppModule {}

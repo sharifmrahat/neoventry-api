@@ -42,7 +42,7 @@ export class AuthService extends BaseService {
     });
 
     const token = this.jwtService.sign({
-      userId: newUser.id,
+      id: newUser.id,
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
@@ -69,7 +69,7 @@ export class AuthService extends BaseService {
     delete user.password;
 
     const token = this.jwtService.sign({
-      userId: user.id,
+      id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,

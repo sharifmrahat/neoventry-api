@@ -4,38 +4,38 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { RolesGuard } from './common/guards/role.guard';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 async function bootstrap() {
-  try {
-    const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule);
 
-    const configService = app.get(ConfigService);
-    const environment = configService.get<string>('environment');
-    const hostUrl = configService.get<string>('hostUrl');
-    const port = configService.get<number>('port');
-    const appName = configService.get<string>('appName');
-    const apiPrefix = configService.get<string>('apiPrefix');
+  const configService = app.get(ConfigService);
+  const environment = configService.get<string>('environment');
+  const hostUrl = configService.get<string>('hostUrl');
+  const port = configService.get<number>('port');
+  const appName = configService.get<string>('appName');
+  const apiPrefix = configService.get<string>('apiPrefix');
 
-    app.enableCors();
-    app.setGlobalPrefix(apiPrefix);
-    app.useGlobalGuards(new RolesGuard(app.get(Reflector)));
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true, // strips unknown properties
-        forbidNonWhitelisted: true, // throw error if unknown props
-        transform: true, // automatically transform payloads to DTO classes
-      }),
-    );
-    app.useGlobalFilters(new GlobalExceptionFilter());
+  app.enableCors();
+  app.setGlobalPrefix(apiPrefix);
 
-    await app.listen(port);
+  const reflector = app.get(Reflector);
+  app.useGlobalGuards(app.get(JwtAuthGuard), new RolesGuard(reflector));
 
-    console.log(
-      `🚀 ${appName} is running in ${environment} environment on ${hostUrl}:${port}${apiPrefix}`,
-    );
-  } catch (error) {
-    console.log('Failed to run app');
-  }
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  app.useGlobalFilters(new GlobalExceptionFilter());
+
+  await app.listen(port);
+  console.log(
+    `🚀 ${appName} is running in ${environment} environment on ${hostUrl}:${port}${apiPrefix}`,
+  );
 }
 
 bootstrap();
