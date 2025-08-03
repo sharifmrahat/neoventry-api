@@ -1,14 +1,25 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { BaseService } from 'src/common/base-service';
 import { QueryHelper } from 'src/common/query-helper';
 import { ApiResponse } from 'src/interfaces/api-response';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserQueryArgs, UserSortArgs } from './dto/user.args';
+import { UserUpdateInput } from './dto/user.input';
+import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService extends BaseService {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
     super();
   }
 
@@ -27,13 +38,69 @@ export class UserService extends BaseService {
 
     return this.response({
       result: profile,
+      message: 'Profile retrieved successfully',
     });
   }
 
-  //TODO: Update Profile
-  // async updateMyProfile(){
+  async updateMyProfile(input: UserUpdateInput, userId: string) {
+    const userExist = await this.prisma.user.findUnique({
+      where: { id: userId, isActive: true },
+    });
+    if (!userExist) {
+      throw new NotFoundException(`User not found with ID: ${userId}`);
+    }
 
-  // }
+    let password = '';
+
+    if (input.username && input.username !== userExist.username) {
+      const usernameExist = await this.prisma.user.findFirst({
+        where: {
+          username: input.username,
+          isActive: true,
+          NOT: { id: userId },
+        },
+      });
+      if (usernameExist) {
+        throw new ConflictException('User already exist with same username');
+      }
+    }
+
+    if (input.currentPassword && input.newPassword) {
+      const matched = await bcrypt.compare(
+        input.currentPassword,
+        userExist.password,
+      );
+
+      if (!matched) {
+        throw new BadRequestException('Current password is wrong');
+      }
+
+      const saltRound = this.configService.get<number>('JWT_SALT_ROUND');
+
+      const hashedPassword = await bcrypt.hash(input.newPassword, +saltRound);
+
+      password = hashedPassword;
+    }
+
+    const data = {
+      name: input.name,
+      username: input.username,
+      phone: input.phone,
+      imageUrl: input.imageUrl,
+      address: input.address,
+      password: password ? password : userExist.password,
+    };
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+
+    return this.response({
+      message: 'Profile updated successfully!',
+      result: updatedUser,
+    });
+  }
   async findAllUser(query: UserQueryArgs, sort: UserSortArgs) {
     const { skip, limit, page } = QueryHelper.getPagination(query);
     const orderBy = QueryHelper.getSort(sort.sortBy, sort.sortOrder);
@@ -75,6 +142,7 @@ export class UserService extends BaseService {
 
     return this.response({
       result: data,
+      message: 'Users retrieved successfully',
       meta: {
         page,
         limit,
