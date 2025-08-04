@@ -8,7 +8,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './modules/user/user.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
-import { JwtStrategy } from './modules/auth/module/jwt.strategy';
+import { JwtStrategy } from './common/jwt.strategy';
+import { CompanyModule } from './modules/company/company.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { JwtStrategy } from './modules/auth/module/jwt.strategy';
     AuthModule,
     PrismaModule,
     UserModule,
+    CompanyModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtAuthGuard, JwtStrategy],

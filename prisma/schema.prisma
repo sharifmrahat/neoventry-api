@@ -29,6 +29,7 @@ model User {
   timelineLog     TimelineLog[]
   permissions     Permission[]
   userGroups      UserGroup[]
+  Subscription    Subscription[]
 }
 
 model Company {
@@ -51,6 +52,7 @@ model Company {
   updatedAt         DateTime                 @updatedAt
   isActive          Boolean                  @default(true)
   isDeleted         Boolean                  @default(false)
+  TimelineLog       TimelineLog[]
 }
 
 model CompanyDocument {
@@ -65,18 +67,63 @@ model CompanyDocument {
   isDeleted Boolean  @default(false)
 }
 
+model Plan {
+  id             String         @id @default(uuid())
+  title          String
+  subtitle       String
+  description    String
+  imageUrl       String
+  price          Int
+  planDurationId String         @unique
+  planDuration   PlanDuration   @relation(fields: [planDurationId], references: [id])
+  companyLimit   Int
+  userLimit      Int
+  productLimit   Int
+  orderLimit     Int
+  features       PlanFeature[]
+  subscriptions  Subscription[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  isActive       Boolean        @default(true)
+  isDeleted      Boolean        @default(false)
+}
+
+model PlanFeature {
+  id         String   @id @default(uuid())
+  title      String
+  conditions String[]
+  plans      Plan[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  isActive   Boolean  @default(true)
+  isDeleted  Boolean  @default(false)
+}
+
+model PlanDuration {
+  id        String   @id @default(uuid())
+  name      String
+  range     String
+  type      String?
+  planId    String?
+  plan      Plan?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  isDeleted Boolean  @default(false)
+}
+
 model Product {
   id              String      @id @default(uuid())
   name            String
   sku             String      @unique
   description     String?
-  price           Float
+  price           Int
   currency        String
   barcode         String?
-  purchasePrice   Float?
-  retailPrice     Float?
-  wholesalePrice  Float?
-  discountedPrice Float?
+  purchasePrice   Int?
+  retailPrice     Int?
+  wholesalePrice  Int?
+  discountedPrice Int?
   imageUrls       String[]
   companyId       String
   company         Company     @relation(fields: [companyId], references: [id])
@@ -119,7 +166,7 @@ model Stock {
   location      String? // store/warehouse/branch name or ID
   batchNumber   String? // if applicable
   expiryDate    DateTime? // for perishable goods
-  purchasePrice Float? // for valuation, optional
+  purchasePrice Int? // for valuation, optional
 
   action   StockAction
   timeline TimelineLog[]
@@ -131,28 +178,31 @@ model Stock {
 }
 
 model Customer {
-  id              String   @id @default(uuid())
+  id              String            @id @default(uuid())
   name            String
   email           String?
   phone           String
+  password        String?
+  pin             String
   whatsApp        String?
   imageUrl        String?
   shippingAddress String?
   billingAddress  String?
   socialMediaUrl  String?
   orders          Order[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  isActive        Boolean  @default(true)
-  isDeleted       Boolean  @default(false)
+  verificationOtp VerificationOtp[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  isActive        Boolean           @default(true)
+  isDeleted       Boolean           @default(false)
 }
 
 model Order {
   id    String @id @default(uuid())
   poId  String @unique
-  total Float
+  total Int
 
-  deliveryCharge Float
+  deliveryCharge Int
 
   status OrderStatus @default(Pending)
 
@@ -163,8 +213,6 @@ model Order {
   customerId String?
 
   orderItems OrderItem[]
-
-  payments Payment[]
 
   timeline TimelineLog[]
 
@@ -193,6 +241,29 @@ model OrderItem {
   isDeleted Boolean  @default(false)
 }
 
+model Subscription {
+  id     String @id @default(uuid())
+  userId String
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  startDate DateTime
+  endDate   DateTime
+
+  status SubscriptionStatus @default(Trialing)
+
+  paymentId String?
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+
+  isCancelled Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  isDeleted Boolean  @default(false)
+}
+
 model TimelineLog {
   id             String @id @default(uuid())
   currentAction  String
@@ -207,6 +278,9 @@ model TimelineLog {
   payment   Payment? @relation(fields: [paymentId], references: [id])
   paymentId String?
 
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
+
   remarks String?
 
   createdAt DateTime @default(now())
@@ -216,32 +290,33 @@ model TimelineLog {
 }
 
 model VerificationOtp {
-  id        String   @id @default(uuid())
-  value     String
-  duration  DateTime
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isActive  Boolean  @default(true)
-  isDeleted Boolean  @default(false)
+  id         String    @id @default(uuid())
+  value      String
+  duration   DateTime
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  isActive   Boolean   @default(true)
+  isDeleted  Boolean   @default(false)
+  Customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
 }
 
 model Payment {
-  id            String        @id @default(uuid())
+  id            String         @id @default(uuid())
   amount        Int
   transactionId String
   paymentMethod String
   remarks       String?
   userId        String
-  user          User          @relation(fields: [userId], references: [id])
-  order         Order?        @relation(fields: [orderId], references: [id])
-  orderId       String?
+  user          User           @relation(fields: [userId], references: [id])
   timelineLog   TimelineLog[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  isActive      Boolean       @default(true)
-  isDeleted     Boolean       @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  isActive      Boolean        @default(true)
+  isDeleted     Boolean        @default(false)
+  Subscription  Subscription[]
 }
 
 model UserGroup {
@@ -344,4 +419,12 @@ enum PaymentStatus {
   Unpaid
   Paid
   PartialPaid
+}
+
+enum SubscriptionStatus {
+  Pending
+  Trialing
+  Active
+  Expired
+  Cancelled
 }

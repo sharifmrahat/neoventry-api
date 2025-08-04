@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { SortOrder } from 'src/interfaces/enums/sort-order';
 
-export class BaseQueryArgs {
+export class GetBaseDto {
   @IsOptional()
   @IsString()
   search?: string;
@@ -25,7 +25,7 @@ export class BaseQueryArgs {
   limit?: number;
 }
 
-export class BaseSortArgs {
+export class GetBaseSortDto {
   @IsOptional()
   @IsEnum(SortOrder)
   sortOrder?: SortOrder;
