@@ -72,10 +72,10 @@ model Plan {
   title          String
   subtitle       String
   description    String
-  imageUrl       String
+  imageUrl       String?
   price          Int
   planDurationId String         @unique
-  planDuration   PlanDuration   @relation(fields: [planDurationId], references: [id])
+  planDuration   PlanDuration?  @relation(fields: [planDurationId], references: [id])
   companyLimit   Int
   userLimit      Int
   productLimit   Int
@@ -105,7 +105,7 @@ model PlanDuration {
   range     String
   type      String?
   planId    String?
-  plan      Plan?
+  plan      Plan?    @relation
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isActive  Boolean  @default(true)
@@ -225,7 +225,7 @@ model Order {
 model OrderItem {
   id       String @id @default(uuid())
   quantity Int
-  price    Float
+  price    Int
 
   barcode String?
 

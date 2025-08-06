@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -56,7 +57,7 @@ export class CompanyController {
     return this.companyService.findOneById(companyId, context);
   }
 
-  @Post('/')
+  @Patch('/')
   updateCompanyById(
     @Body() input: CompanyUpdateInput,
     @UserContext() context: UserPayload,
